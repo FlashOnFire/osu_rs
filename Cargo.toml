@@ -1,0 +1,13 @@
+[package]
+name = "better_osu"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+fps_counter = "2.0.0"
+gfx = "0.18.3"
+piston = "0.53.2"
+piston2d-graphics = "0.43.0"
+piston_window = "0.128.0"
+rodio = "0.17.1"
+vecmath = "1.0.0"
