@@ -1,6 +1,7 @@
 use super::middle_menu_bar::MiddleMenuBar;
 use graphics::{image, Context};
 use piston_window::*;
+use std::cmp::{max, min};
 
 pub struct MainMenu {
     background_tex: G2dTexture,
@@ -52,8 +53,11 @@ impl MainMenu {
             max_h_offset,
         );
 
-        let scale = win_width / back_w;
-        let new_height = back_h * scale;
+        let scale_w = win_width / back_w;
+        let scale_h = win_height / back_h;
+        let max_scale = f64::max(scale_w, scale_h);
+
+        let new_height = back_h * scale_h;
 
         let back_trans = c
             .transform
@@ -62,7 +66,7 @@ impl MainMenu {
                 (win_height - new_height) / 2.0 - max_h_offset,
             )
             .trans(offset_w, offset_h)
-            .scale(scale, scale);
+            .scale(max_scale, max_scale);
 
         image(&self.background_tex, back_trans, g);
 
