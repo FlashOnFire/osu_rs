@@ -1,7 +1,7 @@
 use super::middle_menu_bar::MiddleMenuBar;
+use crate::animations::AnimationsManager;
 use graphics::{image, Context};
 use piston_window::*;
-use std::cmp::{max, min};
 
 pub struct MainMenu {
     background_tex: G2dTexture,
@@ -32,8 +32,8 @@ impl MainMenu {
         // Render background
         let [win_width, win_height] = c.get_view_size();
 
-        let back_w = self.background_tex.get_width() as f64 * 0.9;
-        let back_h = self.background_tex.get_height() as f64 * 0.9;
+        let back_w = self.background_tex.get_width() as f64 * 0.98;
+        let back_h = self.background_tex.get_height() as f64 * 0.98;
 
         let max_w_offset = (back_w * 0.02) / 2.0;
         let max_h_offset = (back_h * 0.02) / 2.0;

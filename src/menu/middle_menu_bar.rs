@@ -1,4 +1,5 @@
 use super::button::{Button, ButtonState, Layout};
+use crate::animations::AnimationsManager;
 use crate::menu::button::ButtonEvent;
 use graphics::math::{Matrix2d, Scalar};
 use graphics::{image, Context, Text};

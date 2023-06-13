@@ -1,10 +1,15 @@
+use animations::AnimationsManager;
 use fps_counter::FPSCounter;
 use music_manager::MusicManager;
 use piston::WindowSettings;
 use piston_window::*;
+use std::time::Duration;
 mod menu;
 
+use crate::animations::{Animation, AnimationType, EasingType};
 use menu::main_menu::MainMenu;
+
+mod animations;
 mod music_manager;
 
 const INITIAL_WIDTH: f64 = 1280.0;
@@ -29,11 +34,28 @@ fn main() {
     music_mgr.set_volume(0.3);
     music_mgr.play_file("welcome.mp3");
 
+    let mut animations_manager = AnimationsManager::new();
+
     let mut glyphs = window.load_font("assets/Roboto-Regular.ttf").unwrap();
     let mut tex_ctx = window.create_texture_context();
 
     let in_menu = true;
     let mut menu = MainMenu::new(&mut tex_ctx);
+
+    animations_manager.add(
+        AnimationType::Timed {
+            duration: Duration::from_secs(1),
+            start_values: Box::new([0.0, 0.0, 0.0]),
+            end_values: Box::new([255.0, 255.0, 255.0]),
+            easing_type: EasingType::CubicInOut,
+        },
+        |values| {
+            println!("{:?}", values);
+        },
+        || {
+            println!("end");
+        },
+    );
 
     while let Some(e) = window.next() {
         window.draw_2d(&e, |c, g, device| {
@@ -83,5 +105,8 @@ fn main() {
         });
 
         menu.event(&e);
+        e.update(|_| {
+            animations_manager.tick();
+        });
     }
 }
