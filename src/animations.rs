@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::f64::consts::PI;
 use std::time::{Duration, Instant};
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone)]
 pub enum AnimationType {
     Timed {
         duration: Duration,
@@ -17,7 +17,7 @@ pub enum AnimationType {
     },
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Clone)]
 pub enum EasingType {
     Linear,
     EasingOut,
@@ -366,10 +366,15 @@ pub struct Animation {
 
 impl Animation {
     pub fn new(animation_type: AnimationType, start_time: Instant) -> Self {
+        let start_vals = match &animation_type {
+            AnimationType::Timed { start_values, .. } => start_values,
+            AnimationType::Conditional { start_values, .. } => start_values,
+        };
+
         Self {
-            animation_type,
+            animation_type: animation_type.clone(),
             start_time,
-            current_values: Box::new([]),
+            current_values: start_vals.clone(),
             ended: false,
         }
     }

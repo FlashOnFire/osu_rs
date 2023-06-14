@@ -42,14 +42,26 @@ fn main() {
     let in_menu = true;
     let mut menu = MainMenu::new(&mut tex_ctx);
 
-    let animation_id = animations_manager.add(AnimationType::Timed {
-        duration: Duration::from_secs(1),
-        start_values: Box::new([0.0, 0.0, 0.0]),
-        end_values: Box::new([255.0, 255.0, 255.0]),
-        easing_type: EasingType::CubicInOut,
-    });
-
     while let Some(e) = window.next() {
+        e.mouse_scroll(|[_horizontal, vertical]| {
+            let mut new_vol = music_mgr.volume();
+
+            if vertical.is_sign_positive() {
+                new_vol += 0.01
+            } else if vertical.is_sign_negative() {
+                new_vol -= 0.01
+            }
+
+            new_vol = new_vol.clamp(0.0, 1.0);
+            music_mgr.set_volume(new_vol);
+        });
+
+        e.update(|_| {
+            animations_manager.tick();
+        });
+
+        menu.event(&e, &mut animations_manager);
+
         window.draw_2d(&e, |c, g, device| {
             fps = fps_counter.tick();
             clear([0.0, 0.0, 0.0, 1.0], g);
@@ -81,31 +93,6 @@ fn main() {
 
             // Update glyphs before rendering.
             glyphs.factory.encoder.flush(device);
-        });
-
-        e.mouse_scroll(|[_horizontal, vertical]| {
-            let mut new_vol = music_mgr.volume();
-
-            if vertical.is_sign_positive() {
-                new_vol += 0.01
-            } else if vertical.is_sign_negative() {
-                new_vol -= 0.01
-            }
-
-            new_vol = new_vol.clamp(0.0, 1.0);
-            music_mgr.set_volume(new_vol);
-        });
-
-        menu.event(&e, &mut animations_manager);
-        e.update(|_| {
-            animations_manager.tick();
-
-            if let Some(a) = animations_manager.get(animation_id) {
-                a.get_current_values().iter().for_each(|v| {
-                    print!("{} ", v);
-                });
-                println!();
-            }
         });
     }
 }

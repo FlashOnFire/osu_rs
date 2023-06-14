@@ -77,19 +77,16 @@ impl MiddleMenuBar {
         }
 
         if e.update_args().is_some() {
+            if let Some(id) = self.osu_btn_animation_id {
+                if let Some(a) = anim_mgr.get(id) {
+                    self.osu_btn_current_ratio = a.get_current_values()[0];
+                }
+            }
+
             while let Some(btn_event) = self.osu_button.next_event() {
                 println!("{:?}", btn_event);
                 if btn_event == ButtonEvent::Press {
                     self.test = !self.test;
-                }
-
-                if let Some(id) = self.osu_btn_animation_id {
-                    if let Some(a) = anim_mgr.get(id) {
-                        a.get_current_values().iter().for_each(|v| {
-                            print!("{} ", v);
-                        });
-                        println!();
-                    }
                 }
             }
         }
@@ -109,13 +106,13 @@ impl MiddleMenuBar {
                 anim_mgr.remove(id);
             }
 
-            self.osu_btn_animation_id = Option::from(anim_mgr.add(AnimationType::Timed {
-                duration: Duration::from_millis(200),
+            self.osu_btn_animation_id = Some(anim_mgr.add(AnimationType::Timed {
+                duration: Duration::from_millis(150),
                 start_values: Box::new([self.osu_btn_current_ratio]),
                 end_values: Box::new([match self.osu_button.state() {
-                    ButtonState::Normal => 0.30,
-                    ButtonState::Hovered => 0.32,
-                    ButtonState::Pressed => 0.35,
+                    ButtonState::Normal => 0.35,
+                    ButtonState::Hovered => 0.38,
+                    ButtonState::Pressed => 0.40,
                 }]),
                 easing_type: EasingType::CubicInOut,
             }));
