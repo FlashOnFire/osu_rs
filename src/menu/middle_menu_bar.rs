@@ -14,6 +14,9 @@ pub(crate) struct MiddleMenuBar {
     osu_button: Button,
     osu_btn_transform: Option<Matrix2d>,
     osu_btn_circle: Option<Layout>,
+    osu_btn_animation_id: Option<u32>,
+    osu_btn_current_ratio: f64,
+    osu_btn_last_state: ButtonState,
     test: bool,
 }
 
@@ -32,6 +35,9 @@ impl MiddleMenuBar {
             osu_button: Button::new(true),
             osu_btn_transform: None,
             osu_btn_circle: None,
+            osu_btn_animation_id: None,
+            osu_btn_current_ratio: 0.35,
+            osu_btn_last_state: ButtonState::Normal,
             test: false,
         }
     }
@@ -65,7 +71,7 @@ impl MiddleMenuBar {
         }
     }
 
-    pub fn event<E: GenericEvent>(&mut self, e: &E) {
+    pub fn event<E: GenericEvent>(&mut self, e: &E, anim_mgr: &mut AnimationsManager) {
         if let Some(circle) = &self.osu_btn_circle {
             self.osu_button.event(circle, e);
         }
@@ -76,12 +82,21 @@ impl MiddleMenuBar {
                 if btn_event == ButtonEvent::Press {
                     self.test = !self.test;
                 }
+
+                if let Some(id) = self.osu_btn_animation_id {
+                    if let Some(a) = anim_mgr.get(id) {
+                        a.get_current_values().iter().for_each(|v| {
+                            print!("{} ", v);
+                        });
+                        println!();
+                    }
+                }
             }
         }
     }
 
     fn calc_osu_btn_transform(
-        &self,
+        &mut self,
         c: Context,
         win_width: Scalar,
         win_height: Scalar,
@@ -89,31 +104,26 @@ impl MiddleMenuBar {
     ) -> (Matrix2d, Layout) {
         let (osu_w, osu_h) = self.osu_button_tex.get_size();
 
-        let mut ratio = match self.osu_button.state() {
-            ButtonState::Normal => 0.30,
-            ButtonState::Hovered => 0.33,
-            ButtonState::Pressed => 0.35,
-        };
+        if self.osu_btn_last_state != self.osu_button.state() {
+            if let Some(id) = self.osu_btn_animation_id {
+                anim_mgr.remove(id);
+            }
 
-        /*match self.osu_button.state() {
-            ButtonState::Normal => todo!(),
-            ButtonState::Hovered => anim_mgr.add(
-                AnimationType::Timed {
-                    duration: Duration::from_millis(2000),
-                    start_values: Box::new([0.30]),
-                    end_values: Box::new([0.50]),
-                    easing_type: EasingType::CubicInOut,
-                },
-                |v| {
-                    ratio = v[0];
-                },
-                || {},
-            ),
+            self.osu_btn_animation_id = Option::from(anim_mgr.add(AnimationType::Timed {
+                duration: Duration::from_millis(200),
+                start_values: Box::new([self.osu_btn_current_ratio]),
+                end_values: Box::new([match self.osu_button.state() {
+                    ButtonState::Normal => 0.30,
+                    ButtonState::Hovered => 0.32,
+                    ButtonState::Pressed => 0.35,
+                }]),
+                easing_type: EasingType::CubicInOut,
+            }));
 
-            ButtonState::Pressed => todo!(),
-        }*/
+            self.osu_btn_last_state = self.osu_button.state();
+        }
 
-        let scale = (win_width * ratio) / osu_w as f64;
+        let scale = (win_width * self.osu_btn_current_ratio) / osu_w as f64;
         let new_width = osu_w as f64 * scale;
         let new_height = osu_h as f64 * scale;
 

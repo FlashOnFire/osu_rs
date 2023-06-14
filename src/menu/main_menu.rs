@@ -81,12 +81,12 @@ impl MainMenu {
             .render(c, g, glyphs, win_width, win_height, anim_mgr);
     }
 
-    pub fn event<E: GenericEvent>(&mut self, e: &E) {
+    pub fn event<E: GenericEvent>(&mut self, e: &E, anim_mgr: &mut AnimationsManager) {
         if let Some(coords) = e.mouse_cursor_args() {
             self.last_mouse_coords = coords;
         }
 
-        self.middle_menu_bar.event(e);
+        self.middle_menu_bar.event(e, anim_mgr);
     }
 
     fn map_range(a: f64, a_min: f64, a_max: f64, b_min: f64, b_max: f64) -> f64 {

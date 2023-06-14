@@ -42,7 +42,7 @@ fn main() {
     let in_menu = true;
     let mut menu = MainMenu::new(&mut tex_ctx);
 
-    let animation_id = &animations_manager.add(AnimationType::Timed {
+    let animation_id = animations_manager.add(AnimationType::Timed {
         duration: Duration::from_secs(1),
         start_values: Box::new([0.0, 0.0, 0.0]),
         end_values: Box::new([255.0, 255.0, 255.0]),
@@ -96,7 +96,7 @@ fn main() {
             music_mgr.set_volume(new_vol);
         });
 
-        menu.event(&e);
+        menu.event(&e, &mut animations_manager);
         e.update(|_| {
             animations_manager.tick();
 

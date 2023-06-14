@@ -382,10 +382,13 @@ impl Animation {
                 end_values,
                 easing_type,
             } => {
-                let t = self.start_time.elapsed().as_millis() as f64 / duration.as_millis() as f64;
+                let t = f64::abs(
+                    self.start_time.elapsed().as_millis() as f64 / duration.as_millis() as f64,
+                );
                 if t > 1.0 {
                     self.current_values = end_values.clone();
                     self.ended = true;
+                    println!("Animation ended");
                 } else {
                     let t = easing_type.apply(t);
                     let current_values = start_values
@@ -393,7 +396,11 @@ impl Animation {
                         .zip(end_values.iter())
                         .map(|(start, end)| start + (end - start) * t)
                         .collect::<Box<[f64]>>();
-                    self.current_values = current_values
+                    self.current_values = current_values;
+
+                    /*self.current_values.iter().for_each(|v| {
+                        println!("{}", v);
+                    });*/
                 }
             }
             AnimationType::Conditional {
@@ -410,6 +417,7 @@ impl Animation {
                 self.current_values = current_values;
                 if condition(&self.current_values) {
                     self.ended = true;
+                    println!("Animation ended");
                 }
             }
         }
@@ -427,6 +435,8 @@ pub struct AnimationsManager {
 
 impl AnimationsManager {
     pub fn new() -> Self {
+        println!("NEW ANIM MGR");
+
         Self {
             animations: HashMap::new(),
             cur_id: 0,
@@ -434,6 +444,8 @@ impl AnimationsManager {
     }
 
     pub fn add(&mut self, animation_type: AnimationType) -> u32 {
+        println!("Adding animation");
+
         if self.cur_id == u32::MAX {
             println!("Animation id overflow, resetting");
 
@@ -450,25 +462,33 @@ impl AnimationsManager {
             self.animations = new_map;
         }
 
-        self.cur_id += 1;
-
         println!("Animation id: {}", self.cur_id);
 
+        self.cur_id += 1;
         self.animations
             .insert(self.cur_id, Animation::new(animation_type, Instant::now()));
 
         self.cur_id
     }
 
-    pub fn remove(&mut self, animation_id: &u32) {
-        self.animations.remove(animation_id);
+    pub fn remove(&mut self, animation_id: u32) {
+        self.animations.remove(&animation_id);
     }
 
     pub fn tick(&mut self) {
         self.animations.retain(|_, animation| !animation.ended);
         self.animations.values_mut().for_each(|a| a.tick());
     }
-    pub fn get(&self, animation_id: &u32) -> Option<&Animation> {
-        self.animations.get(animation_id)
+
+    pub fn get(&self, animation_id: u32) -> Option<&Animation> {
+        let a = self.animations.get(&animation_id);
+
+        if let Some(b) = a {
+            b.get_current_values().iter().for_each(|v| {
+                println!("{}", v);
+            });
+        }
+
+        a
     }
 }

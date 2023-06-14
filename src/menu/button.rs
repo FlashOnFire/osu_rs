@@ -30,6 +30,7 @@ pub enum ButtonEvent {
     Toggle(bool),
 }
 
+#[derive(Debug, Eq, PartialEq)]
 pub enum ButtonState {
     Normal,
     Hovered,
