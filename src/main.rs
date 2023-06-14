@@ -31,7 +31,7 @@ fn main() {
     let mut fps = 0;
 
     let mut music_mgr = MusicManager::new();
-    music_mgr.set_volume(0.3);
+    music_mgr.set_volume(0.1);
     music_mgr.play_file("welcome.mp3");
 
     let mut animations_manager = AnimationsManager::new();
@@ -42,20 +42,12 @@ fn main() {
     let in_menu = true;
     let mut menu = MainMenu::new(&mut tex_ctx);
 
-    animations_manager.add(
-        AnimationType::Timed {
-            duration: Duration::from_secs(1),
-            start_values: Box::new([0.0, 0.0, 0.0]),
-            end_values: Box::new([255.0, 255.0, 255.0]),
-            easing_type: EasingType::CubicInOut,
-        },
-        |values| {
-            println!("{:?}", values);
-        },
-        || {
-            println!("end");
-        },
-    );
+    let animation_id = &animations_manager.add(AnimationType::Timed {
+        duration: Duration::from_secs(1),
+        start_values: Box::new([0.0, 0.0, 0.0]),
+        end_values: Box::new([255.0, 255.0, 255.0]),
+        easing_type: EasingType::CubicInOut,
+    });
 
     while let Some(e) = window.next() {
         window.draw_2d(&e, |c, g, device| {
@@ -64,7 +56,7 @@ fn main() {
             //println!("{}", fps);
 
             if in_menu {
-                menu.render(c, g, &mut glyphs);
+                menu.render(c, g, &mut glyphs, &mut animations_manager);
             }
 
             Text::new_color([1.0, 1.0, 1.0, 1.0], 18)
@@ -107,6 +99,13 @@ fn main() {
         menu.event(&e);
         e.update(|_| {
             animations_manager.tick();
+
+            if let Some(a) = animations_manager.get(animation_id) {
+                a.get_current_values().iter().for_each(|v| {
+                    print!("{} ", v);
+                });
+                println!();
+            }
         });
     }
 }

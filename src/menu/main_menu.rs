@@ -28,7 +28,13 @@ impl MainMenu {
         }
     }
 
-    pub fn render(&mut self, c: Context, g: &mut G2d, glyphs: &mut Glyphs) {
+    pub fn render(
+        &mut self,
+        c: Context,
+        g: &mut G2d,
+        glyphs: &mut Glyphs,
+        anim_mgr: &mut AnimationsManager,
+    ) {
         // Render background
         let [win_width, win_height] = c.get_view_size();
 
@@ -72,7 +78,7 @@ impl MainMenu {
 
         // Render menu bar
         self.middle_menu_bar
-            .render(c, g, glyphs, win_width, win_height);
+            .render(c, g, glyphs, win_width, win_height, anim_mgr);
     }
 
     pub fn event<E: GenericEvent>(&mut self, e: &E) {

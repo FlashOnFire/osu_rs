@@ -1,6 +1,8 @@
+use std::collections::HashMap;
 use std::f64::consts::PI;
 use std::time::{Duration, Instant};
 
+#[derive(PartialEq)]
 pub enum AnimationType {
     Timed {
         duration: Duration,
@@ -354,32 +356,25 @@ impl EasingType {
     }
 }
 
+#[derive(PartialEq)]
 pub struct Animation {
-    id: u32,
     animation_type: AnimationType,
     start_time: Instant,
-    tick_callback: fn(Box<[f64]>),
-    end_callback: fn(),
+    current_values: Box<[f64]>,
+    ended: bool,
 }
 
 impl Animation {
-    pub fn new(
-        id: u32,
-        animation_type: AnimationType,
-        start_time: Instant,
-        tick_callback: fn(Box<[f64]>),
-        end_callback: fn(),
-    ) -> Self {
+    pub fn new(animation_type: AnimationType, start_time: Instant) -> Self {
         Self {
-            id,
             animation_type,
             start_time,
-            tick_callback,
-            end_callback,
+            current_values: Box::new([]),
+            ended: false,
         }
     }
 
-    pub fn tick(&self) -> bool {
+    fn tick(&mut self) {
         match &self.animation_type {
             AnimationType::Timed {
                 duration,
@@ -389,9 +384,8 @@ impl Animation {
             } => {
                 let t = self.start_time.elapsed().as_millis() as f64 / duration.as_millis() as f64;
                 if t > 1.0 {
-                    (self.tick_callback)(end_values.clone());
-                    (self.end_callback)();
-                    return true;
+                    self.current_values = end_values.clone();
+                    self.ended = true;
                 } else {
                     let t = easing_type.apply(t);
                     let current_values = start_values
@@ -399,7 +393,7 @@ impl Animation {
                         .zip(end_values.iter())
                         .map(|(start, end)| start + (end - start) * t)
                         .collect::<Box<[f64]>>();
-                    (self.tick_callback)(current_values);
+                    self.current_values = current_values
                 }
             }
             AnimationType::Conditional {
@@ -412,77 +406,69 @@ impl Animation {
                     .zip(increase_per_second.iter())
                     .map(|(start, increase)| start + increase)
                     .collect::<Box<[f64]>>();
-                if condition(&current_values) {
-                    (self.end_callback)();
-                    return true;
-                } else {
-                    (self.tick_callback)(current_values);
+
+                self.current_values = current_values;
+                if condition(&self.current_values) {
+                    self.ended = true;
                 }
             }
         }
-
-        false
     }
-}
 
-impl PartialEq for Animation {
-    fn eq(&self, other: &Self) -> bool {
-        self.id == other.id
+    pub fn get_current_values(&self) -> &[f64] {
+        &self.current_values
     }
 }
 
 pub struct AnimationsManager {
-    animations: Vec<Animation>,
+    animations: HashMap<u32, Animation>,
     cur_id: u32,
 }
 
 impl AnimationsManager {
     pub fn new() -> Self {
         Self {
-            animations: Vec::new(),
+            animations: HashMap::new(),
             cur_id: 0,
         }
     }
 
-    pub fn add(
-        &mut self,
-        animation_type: AnimationType,
-        tick_callback: fn(Box<[f64]>),
-        end_callback: fn(),
-    ) {
-        self.animations.push(Animation::new(
-            self.cur_id,
-            animation_type,
-            Instant::now(),
-            tick_callback,
-            end_callback,
-        ));
+    pub fn add(&mut self, animation_type: AnimationType) -> u32 {
+        if self.cur_id == u32::MAX {
+            println!("Animation id overflow, resetting");
+
+            self.cur_id = 0;
+
+            let iter = self.animations.drain();
+            let mut new_map = HashMap::new();
+
+            for (_, animation) in iter {
+                new_map.insert(self.cur_id, animation);
+                self.cur_id += 1;
+            }
+
+            self.animations = new_map;
+        }
 
         self.cur_id += 1;
+
+        println!("Animation id: {}", self.cur_id);
+
+        self.animations
+            .insert(self.cur_id, Animation::new(animation_type, Instant::now()));
+
+        self.cur_id
     }
 
-    pub fn remove(&mut self, animation: &Animation) {
-        let index = self
-            .animations
-            .iter()
-            .position(|x| x == animation)
-            .expect("Animation not found");
-
-        self.animations.swap_remove(index);
+    pub fn remove(&mut self, animation_id: &u32) {
+        self.animations.remove(animation_id);
     }
 
     pub fn tick(&mut self) {
-        self.animations.retain(|animation| !animation.tick());
+        self.animations.retain(|_, animation| !animation.ended);
+        self.animations.values_mut().for_each(|a| a.tick());
     }
-
-    pub fn stop_animation(&mut self, animation: &Animation) {
-        let index = self
-            .animations
-            .iter()
-            .position(|x| x == animation)
-            .expect("Animation not found");
-
-        (self.animations[index].end_callback)();
-        self.animations.swap_remove(index);
+    pub fn get(&self, animation_id: &u32) -> Option<&Animation> {
+        self.animations.get(animation_id)
     }
 }

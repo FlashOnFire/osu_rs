@@ -1,5 +1,5 @@
 use super::button::{Button, ButtonState, Layout};
-use crate::animations::AnimationsManager;
+use crate::animations::{Animation, AnimationType, AnimationsManager, EasingType};
 use crate::menu::button::ButtonEvent;
 use graphics::math::{Matrix2d, Scalar};
 use graphics::{image, Context, Text};
@@ -7,6 +7,7 @@ use piston_window::{
     Flip, G2d, G2dTexture, G2dTextureContext, GenericEvent, Glyphs, ImageSize, Texture,
     TextureSettings, Transformed,
 };
+use std::time::Duration;
 
 pub(crate) struct MiddleMenuBar {
     osu_button_tex: G2dTexture,
@@ -42,8 +43,10 @@ impl MiddleMenuBar {
         glyphs: &mut Glyphs,
         win_width: Scalar,
         win_height: Scalar,
+        anim_mgr: &mut AnimationsManager,
     ) {
-        let (osu_btn_trans, osu_btn_circle) = self.calc_osu_btn_transform(c, win_width, win_height);
+        let (osu_btn_trans, osu_btn_circle) =
+            self.calc_osu_btn_transform(c, win_width, win_height, anim_mgr);
         self.osu_btn_transform = Some(osu_btn_trans);
         self.osu_btn_circle = Some(osu_btn_circle);
 
@@ -82,14 +85,33 @@ impl MiddleMenuBar {
         c: Context,
         win_width: Scalar,
         win_height: Scalar,
+        anim_mgr: &mut AnimationsManager,
     ) -> (Matrix2d, Layout) {
         let (osu_w, osu_h) = self.osu_button_tex.get_size();
 
-        let ratio = match self.osu_button.state() {
+        let mut ratio = match self.osu_button.state() {
             ButtonState::Normal => 0.30,
             ButtonState::Hovered => 0.33,
             ButtonState::Pressed => 0.35,
         };
+
+        /*match self.osu_button.state() {
+            ButtonState::Normal => todo!(),
+            ButtonState::Hovered => anim_mgr.add(
+                AnimationType::Timed {
+                    duration: Duration::from_millis(2000),
+                    start_values: Box::new([0.30]),
+                    end_values: Box::new([0.50]),
+                    easing_type: EasingType::CubicInOut,
+                },
+                |v| {
+                    ratio = v[0];
+                },
+                || {},
+            ),
+
+            ButtonState::Pressed => todo!(),
+        }*/
 
         let scale = (win_width * ratio) / osu_w as f64;
         let new_width = osu_w as f64 * scale;
